@@ -1,0 +1,46 @@
+CREATE OR REPLACE PROCEDURE UPDATE_PAY_INS_NO(v_CONTRACT_ID number)
+
+IS
+
+V_SDATE CONTRACTS.CONTRACT_STARTDATE%type;
+V_EDATE CONTRACTS.CONTRACT_ENDDATE%type;
+V_PTYPE CONTRACTS.CONTRACT_PAYMENT_TYPE%type;
+V_INS_NO number(3);
+
+BEGIN
+  
+        select CONTRACT_STARTDATE , CONTRACT_ENDDATE  , CONTRACT_PAYMENT_TYPE
+        into V_SDATE , V_EDATE,V_PTYPE
+        from CONTRACTS
+        where CONTRACT_ID=v_CONTRACT_ID;
+        
+        IF V_PTYPE = 'annual'
+          THEN
+            V_INS_NO := MONTHS_BETWEEN (V_EDATE, V_SDATE) / 12;
+         ELSIF V_PTYPE ='quarter'
+            THEN
+             V_INS_NO :=MONTHS_BETWEEN (V_EDATE, V_SDATE) / 3;
+          ELSIF V_PTYPE ='monthly'
+            THEN
+              V_INS_NO :=MONTHS_BETWEEN (V_EDATE, V_SDATE) ;
+          ELSE
+            V_INS_NO := MONTHS_BETWEEN (V_EDATE, V_SDATE) / 6;
+         END IF;
+         
+    update CONTRACTS
+    set PAYMENTS_INSTALLMENTS_NO = V_INS_NO
+    where CONTRACT_ID=v_CONTRACT_ID;
+        
+END;
+show errors;
+
+------call the procedure---------- 
+
+DECLARE
+  cursor contract_cursor is
+    select contract_id from contracts;
+begin
+    for contract_record in contract_cursor loop
+        UPDATE_PAY_INS_NO(contract_record.contract_id);
+    end loop;
+END;
